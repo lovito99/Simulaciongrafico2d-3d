@@ -1,8 +1,8 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -pedantic -std=c11
 LDFLAGS = -lglut -lGLU -lGL -lm
-TARGET = cohen_sutherland
-SRC = main.c
+TARGET = entrega1_escena_urbana
+SRC = main.c escena.c algoritmos.c render_escena.c
 
 all: $(TARGET)
 
