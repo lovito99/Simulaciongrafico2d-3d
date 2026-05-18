@@ -2,6 +2,13 @@
 
 Este proyecto implementa la entrega 1 solicitada: una escena urbana 2D estatica construida en C con OpenGL y GLUT, usando algoritmos graficos implementados en el codigo.
 
+## Estudiantes
+
+- Romario Quispe Rimachi (Cód. 1614257)
+- Jhamil Jhonatan Huahualuque Vargas (Cód. 225418)
+- Efrain Vitorino Marin (Cód. 160337)
+- Michael Augusto Báez Monge (Cód. 225418)
+
 ## Organizacion de archivos
 
 - main.c: inicializacion de GLUT y ciclo principal.
@@ -45,4 +52,4 @@ sudo apt install build-essential freeglut3-dev
 
 ## Nota del entorno actual
 
-En esta maquina no se pudo completar la compilacion porque falta GL/glut.h. El codigo queda listo, pero la biblioteca de desarrollo de GLUT debe instalarse primero.make
+En esta maquina no se pudo completar la compilacion porque falta GL/glut.h. El codigo queda listo, pero la biblioteca de desarrollo de GLUT debe instalarse primero.
