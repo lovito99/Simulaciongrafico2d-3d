@@ -66,17 +66,23 @@ static void trazar_octantes_circulo(Punto centro, int x, int y, VentanaRecorte v
     emitir_pixel(centro.x - y, centro.y - x, ventana);
 }
 
+/* =============================================================================
+   FUNCIONES PÚBLICAS DE UTILIDAD
+   ============================================================================= */
+
 void fijar_color(Color color)
 {
     glColor3ub(color.r, color.g, color.b);
 }
 
+/* Verificar si un punto está dentro de la ventana de recorte */
 bool punto_dentro_ventana(int x, int y, VentanaRecorte ventana)
 {
     return x >= ventana.xmin && x <= ventana.xmax &&
            y >= ventana.ymin && y <= ventana.ymax;
 }
 
+/* Convertir un rectángulo a polígono */
 Poligono rectangulo_a_poligono(Rectangulo rectangulo)
 {
     Poligono poligono;
@@ -88,6 +94,10 @@ Poligono rectangulo_a_poligono(Rectangulo rectangulo)
     poligono.puntos[3] = (Punto){rectangulo.x, rectangulo.y + rectangulo.alto};
     return poligono;
 }
+
+/* =============================================================================
+   ALGORITMO DE CLIPPING: COHEN-SUTHERLAND
+   ============================================================================= */
 
 bool recortar_linea(Punto *inicio, Punto *fin, VentanaRecorte ventana)
 {
@@ -157,6 +167,10 @@ bool recortar_linea(Punto *inicio, Punto *fin, VentanaRecorte ventana)
     }
 }
 
+/* =============================================================================
+   ALGORITMO DE BRESENHAM PARA LÍNEAS
+   ============================================================================= */
+
 void dibujar_linea_bresenham(Punto inicio, Punto fin, Color color, VentanaRecorte ventana)
 {
     Punto inicio_recortado = inicio;
@@ -202,6 +216,10 @@ void dibujar_linea_bresenham(Punto inicio, Punto fin, Color color, VentanaRecort
     glEnd();
 }
 
+/* =============================================================================
+   ALGORITMO DEL PUNTO MEDIO PARA CIRCUNFERENCIAS
+   ============================================================================= */
+
 void dibujar_circulo_punto_medio(Punto centro, int radio, Color color, VentanaRecorte ventana)
 {
     int x = 0;
@@ -226,6 +244,10 @@ void dibujar_circulo_punto_medio(Punto centro, int radio, Color color, VentanaRe
 
     glEnd();
 }
+
+/* =============================================================================
+   ALGORITMO DE BARRIDO (SCANLINE) PARA RELLENO DE POLÍGONOS
+   ============================================================================= */
 
 void rellenar_poligono_scanline(const Poligono *poligono, Color color, VentanaRecorte ventana)
 {
@@ -292,6 +314,7 @@ void rellenar_poligono_scanline(const Poligono *poligono, Color color, VentanaRe
     glEnd();
 }
 
+/* Dibujar el contorno de un polígono */
 void dibujar_contorno_poligono(const Poligono *poligono, Color color, VentanaRecorte ventana)
 {
     for (int indice = 0; indice < poligono->cantidad; ++indice) {
@@ -300,18 +323,24 @@ void dibujar_contorno_poligono(const Poligono *poligono, Color color, VentanaRec
     }
 }
 
+/* Dibujar polígono relleno con contorno */
 void dibujar_poligono_relleno(const Poligono *poligono, Color relleno, Color contorno, VentanaRecorte ventana)
 {
     rellenar_poligono_scanline(poligono, relleno, ventana);
     dibujar_contorno_poligono(poligono, contorno, ventana);
 }
 
+/* Dibujar rectángulo relleno con contorno */
 void dibujar_rectangulo(Rectangulo rectangulo, Color relleno, Color contorno, VentanaRecorte ventana)
 {
     const Poligono poligono = rectangulo_a_poligono(rectangulo);
 
     dibujar_poligono_relleno(&poligono, relleno, contorno, ventana);
 }
+
+/* =============================================================================
+   UTILIDADES DE RENDERIZADO
+   ============================================================================= */
 
 void dibujar_texto(float x, float y, const char *texto, Color color)
 {

@@ -45,4 +45,4 @@ sudo apt install build-essential freeglut3-dev
 
 ## Nota del entorno actual
 
-En esta maquina no se pudo completar la compilacion porque falta GL/glut.h. El codigo queda listo, pero la biblioteca de desarrollo de GLUT debe instalarse primero.
+En esta maquina no se pudo completar la compilacion porque falta GL/glut.h. El codigo queda listo, pero la biblioteca de desarrollo de GLUT debe instalarse primero.make
