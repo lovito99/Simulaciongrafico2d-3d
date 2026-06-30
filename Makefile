@@ -1,8 +1,9 @@
-CC = gcc
-CFLAGS = -Wall -Wextra -pedantic -std=c11
+CC      = gcc
+CFLAGS  = -Wall -Wextra -pedantic -std=c11
 LDFLAGS = -lglut -lGLU -lGL -lm
-TARGET = entrega1_escena_urbana
-SRC = main.c escena.c algoritmos.c render_escena.c
+
+TARGET = entrega2_transformaciones
+SRC    = main.c escena.c algoritmos.c transformaciones.c render_escena.c
 
 all: $(TARGET)
 

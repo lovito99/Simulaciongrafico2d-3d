@@ -127,4 +127,14 @@ typedef struct {
     Sol sol;
 } Escena;
 
+/* Estado de animacion para Entrega 2 */
+typedef struct {
+    float vehiculo_tx;    /* traslacion del vehiculo en X (pixeles) */
+    float angulo_rueda;   /* angulo de rotacion de las ruedas (radianes) */
+    float nube_tx;        /* posicion X de la nube animada */
+    float arbol_escala;   /* factor de escala uniforme del arbol derecho */
+    float shear_senal;    /* coeficiente shx de distorsion de la senal */
+    int   pausa;          /* 1 = animacion pausada */
+} EstadoAnim;
+
 #endif
