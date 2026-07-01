@@ -31,11 +31,9 @@ Mat3 mat3_shear_x_pivote(float shx, float cx, float cy);
 Mat3 mat3_reflexion_eje_x(float y0);   /* reflexion sobre linea horizontal y = y0 */
 Mat3 mat3_reflexion_eje_y(float x0);   /* reflexion sobre linea vertical   x = x0 */
 
-/* Algebra */
-Mat3 mat3_mul(Mat3 a, Mat3 b);         /* producto a * b */
-
-/* Aplicacion */
-Punto    mat3_punto(Mat3 m, Punto p);
+/* Composicion y aplicacion */
+Mat3  mat3_mul(Mat3 a, Mat3 b);
+Punto mat3_punto(Mat3 m, Punto p);
 Poligono mat3_poligono(Mat3 m, const Poligono *poly);
 
-#endif
+#endif /* TRANSFORMACIONES_H */

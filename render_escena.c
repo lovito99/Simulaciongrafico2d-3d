@@ -201,7 +201,7 @@ static void dibujar_bus_t(const Vehiculo *v, Mat3 M, float ang)
     Poligono cuerpo_t = mat3_poligono(M, &cuerpo_p);
     dibujar_poligono_relleno(&cuerpo_t, v->color_cuerpo, v->contorno, VENTANA_RECORTE);
 
-    Rectangulo franja = {v->cuerpo.x+8, v->cuerpo.y+24, v->cuerpo.ancho-16, 5};
+    Rectangulo franja = {v->cuerpo.x+8, v->cuerpo.y+21, v->cuerpo.ancho-16, 4};
     Poligono franja_t = mat3_poligono(M, &(Poligono){
         .puntos={{franja.x,franja.y},{franja.x+franja.ancho,franja.y},
                  {franja.x+franja.ancho,franja.y+franja.alto},{franja.x,franja.y+franja.alto}},
@@ -209,17 +209,18 @@ static void dibujar_bus_t(const Vehiculo *v, Mat3 M, float ang)
     dibujar_poligono_relleno(&franja_t, aclarar(v->color_cuerpo,.42f),
                              aclarar(v->color_cuerpo,.42f), VENTANA_RECORTE);
 
-    /* Frente / parabrisas (lado izquierdo: frente del bus hacia la izquierda) */
+    /* Parabrisas (lado derecho: frente del bus al entrar por la derecha) */
     Poligono cabina_t = mat3_poligono(M, &v->cabina);
     dibujar_poligono_relleno(&cabina_t, v->color_cabina, v->contorno, VENTANA_RECORTE);
 
-    /* Ventanas laterales: 5 ventanas a lo largo del cuerpo */
+    /* Ventanas: 5 unidades desde x+8 hasta el parabrisas (x+196).
+     * Espacio util = 188px  →  5*28 + 4*bgap = 188  →  bgap = (188-140)/4 = 12  */
     {
         const Color c_vent     = {185, 220, 255};
         const Color c_cont_ven = {18,  55,  115};
-        const int bx0 = v->cuerpo.x + 52;
-        const int by  = v->cuerpo.y + 6;
-        const int bw  = 28, bh = 16, bgap = 7;
+        const int bx0 = v->cuerpo.x + 8;
+        const int by  = v->cuerpo.y + 5;
+        const int bw  = 28, bh = 14, bgap = 12;
         for (int i = 0; i < 5; i++) {
             Rectangulo ven = {bx0 + i*(bw+bgap), by, bw, bh};
             Poligono vp = rectangulo_a_poligono(ven);

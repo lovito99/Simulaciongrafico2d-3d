@@ -2,19 +2,22 @@
 
 /*
  * BUS AZUL
- * Cuerpo en coordenadas locales: x=0..240, y=105..140.
+ * Cuerpo en coordenadas locales: x=0..240, y=109..140 (carril superior y=100..140).
  * Viaja de derecha a izquierda (carril superior).
- * El frente es el lado IZQUIERDO (x=0) porque avanza hacia la izquierda.
+ * Parabrisas en el lado DERECHO (x=196..240): en 2D el bus entra por la
+ * derecha mostrando su frente primero, dando aspecto de avance hacia adelante.
+ * Ruedas: radio=13, centros en y=109 para quedar dentro del carril superior.
+ * Rueda trasera x=44, rueda delantera x=168 (deja libre x=182..196 antes del parabrisas).
  * Offset de posicion en pantalla: mat3_traslacion(bus_tx, 0).
  */
 const Vehiculo BUS_AZUL = {
-    .cuerpo = {0, 105, 240, 35},
+    .cuerpo = {0, 109, 240, 31},
     .cabina = {
-        .puntos  = {{0, 140}, {0, 105}, {28, 105}, {44, 140}},
+        .puntos  = {{240, 140}, {240, 109}, {212, 109}, {196, 140}},
         .cantidad = 4
     },
-    .ruedas      = {{32, 105}, {198, 105}},
-    .radio_rueda = 20,
+    .ruedas      = {{44, 109}, {168, 109}},
+    .radio_rueda = 13,
     .color_cuerpo = {55, 125, 210},
     .color_cabina = {110, 175, 235},
     .color_rueda  = {22, 22, 22},
