@@ -1,7 +1,7 @@
 #include "render_escena.h"
 
 #include <GL/glew.h>
-#include <GL/glut.h>
+#include <GLFW/glfw3.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -646,7 +646,7 @@ static void dibujar_panel_hud(const EstadoAnim *e)
     case OBJ_ED_NARANJA: {
         dibujar_texto(65.0f, 44.0f, "EDIFICIO NARANJA  |  CONTROLES:", (Color){255,180,80});
         dibujar_texto(65.0f, 28.0f,
-            "Flechas = Trasladar  |  E/S = Escala +/-  |  [/] = Rotar  |  D/F = Shear  |  R = Reflexion  |  0 = Reset",
+            "Flechas = Trasladar  |  E/S = Escala +/-  |  Q/W = Rotar  |  D/F = Shear  |  R = Reflexion  |  0 = Reset",
             blanco);
         char vals[120];
         snprintf(vals, sizeof(vals),
@@ -661,7 +661,7 @@ static void dibujar_panel_hud(const EstadoAnim *e)
     case OBJ_ED_AZUL: {
         dibujar_texto(65.0f, 44.0f, "EDIFICIO AZUL  |  CONTROLES:", (Color){130,160,255});
         dibujar_texto(65.0f, 28.0f,
-            "Flechas = Trasladar  |  E/S = Escala +/-  |  [/] = Rotar  |  D/F = Shear  |  R = Reflexion  |  0 = Reset",
+            "Flechas = Trasladar  |  E/S = Escala +/-  |  Q/W = Rotar  |  D/F = Shear  |  R = Reflexion  |  0 = Reset",
             blanco);
         char vals[120];
         snprintf(vals, sizeof(vals),

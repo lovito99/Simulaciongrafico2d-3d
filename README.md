@@ -249,7 +249,7 @@ Se muestra el contorno original tenue como referencia de comparacion.
 | Aspecto | Laboratorios (labo6-9) | Entrega 2 |
 |---|---|---|
 | Lenguaje | C++ 17 | C 11 |
-| Ventana / bucle | GLFW 3 | GLUT (freeglut) |
+| Ventana / bucle | GLFW 3 | GLFW 3 (`glfwCreateWindow`, `glfwPollEvents`) |
 | Carga de extensiones | GLEW | GLEW (`glewInit()` tras `glutCreateWindow`) |
 | Algebra lineal | GLM (`glm::mat3`, `glm::value_ptr`) | `Mat3` implementado en `transformaciones.c` |
 | Aplicacion de la matriz | GPU — vertex shader `uniform mat3 uTransform` | CPU — `mat3_punto()` antes de Bresenham/scan-line |
@@ -268,15 +268,14 @@ por los mismos algoritmos de la Entrega 1.
 
 | Libreria | Header | Para que se usa |
 |---|---|---|
-| GLEW | `GL/glew.h` | Carga de extensiones OpenGL; debe incluirse antes que GLUT |
-| OpenGL | `GL/gl.h` (via glew/glut) | `glBegin/glEnd`, `glVertex2i`, `glColor3ub` |
-| GLU | `GL/glu.h` (via glut) | `gluOrtho2D` para proyeccion 2D |
-| GLUT (freeglut) | `GL/glut.h` | Ventana, doble buffer, timer animado, teclado |
+| GLEW | `GL/glew.h` | Carga de extensiones OpenGL; debe incluirse antes que GLFW |
+| GLFW 3 | `GLFW/glfw3.h` | Ventana, doble buffer, bucle de eventos, teclado |
+| OpenGL | `GL/gl.h` (via glew) | `glBegin/glEnd`, `glVertex2i`, `glColor3ub` |
 | math.h | `<math.h>` | `cosf`, `sinf`, `roundf`, `fabsf` para matrices |
 
 Instalacion en Ubuntu/Debian:
 ```bash
-sudo apt install build-essential freeglut3-dev libglew-dev
+sudo apt install build-essential libglfw3-dev libglew-dev
 ```
 
 ---
@@ -286,7 +285,7 @@ sudo apt install build-essential freeglut3-dev libglew-dev
 ```
 transformaciones.h / .c  — tipo Mat3 y todas las operaciones matriciales
 tipos.h                  — estructuras de datos + EstadoAnim + constantes OBJ_*
-main.c                   — init GLUT, timer 60 fps, teclado + teclas especiales
+main.c                   — init GLFW + GLEW, bucle 60 fps, callback de teclado
 escena.c / .h            — datos estaticos de la escena + BUS_AZUL
 algoritmos.c / .h        — Bresenham, punto medio, scan-line, clipping
 render_escena.c / .h     — renderizado animado con transformaciones y panel HUD
@@ -303,7 +302,7 @@ render_escena.c / .h     — renderizado animado con transformaciones y panel HU
 | Traslacion | Nubes recorren el cielo | Automatico | `T(nube_tx, y)` |
 | Traslacion | Edificio naranja / azul | Manual (flechas) | `T(tx, ty)` |
 | Rotacion | Espolones de ruedas (vehiculo + bus) | Automatico | `T(cx,cy)*R(θ)*T(-cx,-cy)` |
-| Rotacion | Edificio naranja / azul | Manual (`[` `]`) | integrada en composicion |
+| Rotacion | Edificio naranja / azul | Manual (`Q` `W`) | integrada en composicion |
 | Escala | Edificio naranja / azul | Manual (`E` `S`) | integrada en composicion |
 | Reflexion eje-X | Vehiculo rojo reflejado en el piso (y=88) | Automatico | `Ref_x(88)*T(tx,0)` |
 | Reflexion eje-Y | Edificio naranja / azul | Manual (`R`) | `S(-1,1)` en composicion |
@@ -400,8 +399,8 @@ Ambos edificios comparten los mismos controles de transformacion:
 | `↑` `↓` | **Traslacion Y** | Desplaza el edificio verticalmente |
 | `E` | **Escala +** | Agranda respecto al centro del edificio |
 | `S` | **Escala −** | Achica respecto al centro del edificio |
-| `[` | **Rotacion +** | Gira en sentido antihorario alrededor del centro |
-| `]` | **Rotacion −** | Gira en sentido horario alrededor del centro |
+| `Q` | **Rotacion +** | Gira en sentido antihorario alrededor del centro |
+| `W` | **Rotacion −** | Gira en sentido horario alrededor del centro |
 | `D` | **Shear +** | Distorsiona en cizalla positiva (inclina hacia la derecha) |
 | `F` | **Shear −** | Distorsiona en cizalla negativa (inclina hacia la izquierda) |
 | `R` | **Reflexion** | Alterna reflexion eje-Y respecto al centro del edificio |

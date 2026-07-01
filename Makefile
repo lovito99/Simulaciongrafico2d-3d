@@ -1,6 +1,6 @@
 CC      = gcc
 CFLAGS  = -Wall -Wextra -pedantic -std=c11
-LDFLAGS = -lGLEW -lglut -lGLU -lGL -lm
+LDFLAGS = -lGLEW -lglfw -lGL -lm
 
 TARGET = entrega2_transformaciones
 SRC    = main.c escena.c algoritmos.c transformaciones.c render_escena.c
