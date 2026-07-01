@@ -6,7 +6,7 @@ con animacion continua a ~60 fps mediante el timer de GLUT.
 
 **Universidad Nacional de San Antonio Abad del Cusco**  
 Escuela Profesional: Ing. Informatica y de Sistemas — Computacion Grafica I  
-Docente: Dr. Hans Harley Ccacyahuillca Bejar
+Docente: Dr. BORIS CHULLO LLAVE
 
 ## Estudiantes
 
