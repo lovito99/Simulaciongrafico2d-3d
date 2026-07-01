@@ -164,6 +164,10 @@ typedef struct {
     float ed_azul_angulo;
     float ed_azul_shear;
     int   ed_azul_reflejo;
+
+    /* --- Semaforo --- */
+    int   semaforo_fase;    /* 0=rojo  1=amarillo  2=verde */
+    int   semaforo_ticks;   /* fotogramas que faltan para cambiar */
 } EstadoAnim;
 
 #endif

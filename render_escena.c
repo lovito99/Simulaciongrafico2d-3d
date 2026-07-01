@@ -287,13 +287,28 @@ static void dibujar_carretera(const Carretera *carretera)
                                 carretera->color_divisor, VENTANA_RECORTE);
 }
 
-static void dibujar_semaforo(const Semaforo *semaforo)
+static void dibujar_semaforo(const Semaforo *semaforo, int fase)
 {
+    /* Colores "apagados" (oscuros) para luces inactivas */
+    static const Color DIM[3] = {
+        {50, 14, 14},   /* rojo apagado    */
+        {52, 44, 14},   /* amarillo apagado */
+        {14, 42, 20}    /* verde apagado    */
+    };
+
     dibujar_rectangulo(semaforo->poste, semaforo->color_poste, semaforo->contorno, VENTANA_RECORTE);
     dibujar_rectangulo(semaforo->caja,  semaforo->color_caja,  semaforo->contorno, VENTANA_RECORTE);
-    for (int i = 0; i < 3; ++i)
-        dibujar_circulo_punto_medio(semaforo->luces[i], semaforo->radio,
-                                    semaforo->colores_luces[i], VENTANA_RECORTE);
+
+    for (int i = 0; i < 3; ++i) {
+        Color c = (i == fase) ? semaforo->colores_luces[i] : DIM[i];
+        dibujar_circulo_punto_medio(semaforo->luces[i], semaforo->radio, c, VENTANA_RECORTE);
+    }
+
+    /* Halo de brillo extra alrededor de la luz activa */
+    dibujar_circulo_punto_medio(semaforo->luces[fase],
+                                semaforo->radio + 4,
+                                semaforo->colores_luces[fase],
+                                VENTANA_RECORTE);
 }
 
 static void dibujar_sol(const Sol *sol)
@@ -552,7 +567,7 @@ void dibujar_escena_animada(const EstadoAnim *estado)
 
     /* --- Casa y elementos fijos --- */
     dibujar_casa(&ESCENA_URBANA.casa);
-    dibujar_semaforo(&ESCENA_URBANA.semaforo);
+    dibujar_semaforo(&ESCENA_URBANA.semaforo, estado->semaforo_fase);
 
     /* --- Arboles estaticos --- */
     dibujar_arbol_t(&ESCENA_URBANA.arboles[0], mat3_identidad());

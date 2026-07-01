@@ -36,6 +36,10 @@ EstadoAnim ESTADO = {
     .ed_azul_angulo  = 0.0f,
     .ed_azul_shear   = 0.0f,
     .ed_azul_reflejo = 0,
+
+    /* Semaforo: empieza en rojo (3 segundos) */
+    .semaforo_fase  = 0,
+    .semaforo_ticks = 180,
 };
 
 static float shear_dir = 1.0f;
@@ -102,6 +106,16 @@ static void timer(int valor)
         ESTADO.shear_senal += 0.003f * shear_dir;
         if (ESTADO.shear_senal >=  0.40f) shear_dir = -1.0f;
         if (ESTADO.shear_senal <= -0.40f) shear_dir =  1.0f;
+
+        /* SEMAFORO: ciclo rojo(3s) -> amarillo(1.5s) -> verde(3s) */
+        if (--ESTADO.semaforo_ticks <= 0) {
+            ESTADO.semaforo_fase = (ESTADO.semaforo_fase + 1) % 3;
+            switch (ESTADO.semaforo_fase) {
+            case 0: ESTADO.semaforo_ticks = 180; break; /* rojo:     3 s */
+            case 1: ESTADO.semaforo_ticks =  90; break; /* amarillo: 1.5 s */
+            case 2: ESTADO.semaforo_ticks = 180; break; /* verde:    3 s */
+            }
+        }
     }
 
     glutPostRedisplay();
