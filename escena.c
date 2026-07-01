@@ -1,5 +1,26 @@
 #include "escena.h"
 
+/*
+ * BUS AZUL
+ * Cuerpo en coordenadas locales: x=0..240, y=105..140.
+ * Viaja de derecha a izquierda (carril superior).
+ * El frente es el lado IZQUIERDO (x=0) porque avanza hacia la izquierda.
+ * Offset de posicion en pantalla: mat3_traslacion(bus_tx, 0).
+ */
+const Vehiculo BUS_AZUL = {
+    .cuerpo = {0, 105, 240, 35},
+    .cabina = {
+        .puntos  = {{0, 140}, {0, 105}, {28, 105}, {44, 140}},
+        .cantidad = 4
+    },
+    .ruedas      = {{32, 105}, {198, 105}},
+    .radio_rueda = 20,
+    .color_cuerpo = {55, 125, 210},
+    .color_cabina = {110, 175, 235},
+    .color_rueda  = {22, 22, 22},
+    .contorno     = {18, 55, 115}
+};
+
 const VentanaRecorte VENTANA_RECORTE = {60, 60, 840, 620};
 
 const Escena ESCENA_URBANA = {

@@ -283,27 +283,33 @@ sudo apt install build-essential freeglut3-dev
 ## Organizacion de archivos
 
 ```
-transformaciones.h / .c  — NUEVO: tipo Mat3 y todas las operaciones matriciales
-tipos.h                  — estructuras de datos + EstadoAnim (nuevo)
-main.c                   — init GLUT, timer 60 fps, teclado, EstadoAnim global
-escena.c / .h            — datos estaticos de la escena (sin cambios respecto E1)
-algoritmos.c / .h        — Bresenham, punto medio, scan-line, clipping (sin cambios)
-render_escena.c / .h     — renderizado animado con transformaciones aplicadas
+transformaciones.h / .c  — tipo Mat3 y todas las operaciones matriciales
+tipos.h                  — estructuras de datos + EstadoAnim + constantes OBJ_*
+main.c                   — init GLUT, timer 60 fps, teclado + teclas especiales
+escena.c / .h            — datos estaticos de la escena + BUS_AZUL
+algoritmos.c / .h        — Bresenham, punto medio, scan-line, clipping
+render_escena.c / .h     — renderizado animado con transformaciones y panel HUD
 ```
 
 ---
 
 ## Transformaciones implementadas
 
-| Transformacion | Objeto en escena | Matriz | Archivo |
+| Transformacion | Objeto en escena | Modo | Matriz |
 |---|---|---|---|
-| Traslacion | Vehiculo avanza en X; nube recorre el cielo | `T(tx, 0)` | `render_escena.c:dibujar_vehiculo_t` |
-| Rotacion | Espolones de ruedas giran al avanzar | `T(cx,cy)*R(θ)*T(-cx,-cy)` | `render_escena.c:dibujar_vehiculo_t` |
-| Escala | Arbol derecho oscila entre 0.65x y 1.45x | `T(base)*S(s,s)*T(-base)` | `render_escena.c:dibujar_arbol_escalado` |
-| Reflexion eje-Y | Edificio izquierdo: copia fantasma a su izquierda (x=190) | `T(190,0)*S(-1,1)*T(-190,0)` | `render_escena.c:dibujar_edificio_reflexion` |
-| Reflexion eje-X | Vehiculo reflejado en el piso de la carretera (y=88) | `Ref_x(88)*T(tx,0)` | `render_escena.c:dibujar_vehiculo_reflexion` |
-| Distorsion (shear) | Senal octogonal se deforma oscilatoriamente | `T(cx,cy)*SH_x(shx)*T(-cx,-cy)` | `render_escena.c:dibujar_senal_t` |
-| Composicion | Rueda = traslacion del vehiculo compuesta con rotacion pivote | `M = T(tx,0) * R_pivote(θ,cx,cy)` | `render_escena.c:dibujar_escena_animada` |
+| Traslacion | Vehiculo rojo avanza izq→der | Automatico | `T(tx, 0)` |
+| Traslacion | Bus azul avanza der→izq (carril contrario) | Automatico | `T(bus_tx, 0)` |
+| Traslacion | Nubes recorren el cielo | Automatico | `T(nube_tx, y)` |
+| Traslacion | Edificio naranja / azul | Manual (flechas) | `T(tx, ty)` |
+| Rotacion | Espolones de ruedas (vehiculo + bus) | Automatico | `T(cx,cy)*R(θ)*T(-cx,-cy)` |
+| Rotacion | Edificio naranja / azul | Manual (`[` `]`) | integrada en composicion |
+| Escala | Edificio naranja / azul | Manual (`E` `S`) | integrada en composicion |
+| Reflexion eje-X | Vehiculo rojo reflejado en el piso (y=88) | Automatico | `Ref_x(88)*T(tx,0)` |
+| Reflexion eje-Y | Edificio naranja / azul | Manual (`R`) | `S(-1,1)` en composicion |
+| Distorsion (shear) | Senal octogonal oscila | Automatico | `T(cx,cy)*SH_x(shx)*T(-cx,-cy)` |
+| Distorsion (shear) | Edificio naranja / azul | Manual (`D` `F`) | integrada en composicion |
+| Composicion | Edificios: todas las ops encadenadas | Manual | ver formula abajo |
+| Composicion | Rueda = traslacion vehiculo + rotacion pivote | Automatico | `T(tx,0)*R_pivote(θ,cx,cy)` |
 
 ### Fundamento matematico
 
@@ -324,10 +330,14 @@ Shear X:       SH_x(shx) = | 1  shx  0 |   =>  x' = x + shx*y
                              | 0   1   0 |       y' = y
                              | 0   0   1 |
 
-Reflexion X:   Ref_x(y0) = T(0,y0) * S(1,-1) * T(0,-y0)
-Reflexion Y:   Ref_y(x0) = T(x0,0) * S(-1,1) * T(-x0,0)
+Reflexion X:   Ref_x(y0) = T(0,y0)  * S(1,-1)  * T(0,-y0)
+Reflexion Y:   Ref_y()   = S(-1, 1) aplicada dentro de la composicion
 
-Composicion rueda:
+Composicion edificios (M aplicada a cada vertice):
+  M = T(tx,ty) * T(cx,cy) * R(ang) * S(esc,esc) * SH_x(sh) * [S(-1,1)?] * T(-cx,-cy)
+       traslado    pivote    rota     escala        shear       reflexion    pivote
+
+Composicion ruedas:
   M_rueda = T(tx, 0)  *  [ T(cx,cy) * R(θ) * T(-cx,-cy) ]
               traslacion      rotacion alrededor del pivote
 ```
@@ -337,17 +347,74 @@ Composicion rueda:
 ## Compilacion y ejecucion
 
 ```bash
-make        # compila entrega2_transformaciones
+make        # compila  →  entrega2_transformaciones
 make run    # compila y ejecuta
 make clean  # elimina el binario
 ```
 
+---
+
 ## Controles interactivos
+
+### Seleccion de objeto activo
+
+| Tecla | Objeto seleccionado |
+|---|---|
+| `1` | Vehiculo Rojo |
+| `2` | Bus Azul |
+| `3` | Edificio Naranja |
+| `4` | Edificio Azul |
+| `TAB` | Ciclar entre los 4 objetos |
+
+---
+
+### Vehiculo Rojo  (`tecla 1`)
 
 | Tecla | Accion |
 |---|---|
-| `ESPACIO` | Pausa / reanuda la animacion |
-| `E` / `S` | Sube / baja escala del arbol derecho |
-| `D` / `F` | Aumenta / reduce shear de la senal |
-| `R` | Gira las ruedas manualmente un paso |
+| `←` `→` | Mover manualmente en X |
+| `ESPACIO` | Pausar / reanudar animacion automatica |
+| `0` | Reiniciar posicion |
 | `ESC` | Salir |
+
+---
+
+### Bus Azul  (`tecla 2`)
+
+| Tecla | Accion |
+|---|---|
+| `←` `→` | Mover manualmente en X |
+| `ESPACIO` | Pausar / reanudar animacion automatica |
+| `0` | Reiniciar posicion (vuelve a entrar por la derecha) |
+
+---
+
+### Edificio Naranja  (`tecla 3`)  y  Edificio Azul  (`tecla 4`)
+
+Ambos edificios comparten los mismos controles de transformacion:
+
+| Tecla | Transformacion | Detalle |
+|---|---|---|
+| `←` `→` | **Traslacion X** | Desplaza el edificio horizontalmente |
+| `↑` `↓` | **Traslacion Y** | Desplaza el edificio verticalmente |
+| `E` | **Escala +** | Agranda respecto al centro del edificio |
+| `S` | **Escala −** | Achica respecto al centro del edificio |
+| `[` | **Rotacion +** | Gira en sentido antihorario alrededor del centro |
+| `]` | **Rotacion −** | Gira en sentido horario alrededor del centro |
+| `D` | **Shear +** | Distorsiona en cizalla positiva (inclina hacia la derecha) |
+| `F` | **Shear −** | Distorsiona en cizalla negativa (inclina hacia la izquierda) |
+| `R` | **Reflexion** | Alterna reflexion eje-Y respecto al centro del edificio |
+| `0` | **Reset** | Restablece todas las transformaciones al estado inicial |
+
+> Cuando dos o mas transformaciones estan activas al mismo tiempo la etiqueta
+> en pantalla muestra **[COMPOSICION]**, indicando que la matriz resultante es el
+> producto de todas las matrices individuales encadenadas.
+
+---
+
+### Controles globales
+
+| Tecla | Accion |
+|---|---|
+| `ESPACIO` | Pausa / reanuda toda la animacion automatica |
+| `ESC` | Salir del programa |

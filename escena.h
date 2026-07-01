@@ -4,6 +4,7 @@
 #include "tipos.h"
 
 extern const VentanaRecorte VENTANA_RECORTE;
-extern const Escena ESCENA_URBANA;
+extern const Escena         ESCENA_URBANA;
+extern const Vehiculo       BUS_AZUL;
 
 #endif

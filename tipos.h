@@ -127,14 +127,43 @@ typedef struct {
     Sol sol;
 } Escena;
 
+/* Indices de objetos seleccionables */
+#define OBJ_VEHICULO_ROJO  0
+#define OBJ_BUS_AZUL       1
+#define OBJ_ED_NARANJA     2
+#define OBJ_ED_AZUL        3
+
 /* Estado de animacion para Entrega 2 */
 typedef struct {
-    float vehiculo_tx;    /* traslacion del vehiculo en X (pixeles) */
-    float angulo_rueda;   /* angulo de rotacion de las ruedas (radianes) */
-    float nube_tx;        /* posicion X de la nube animada */
-    float arbol_escala;   /* factor de escala uniforme del arbol derecho */
-    float shear_senal;    /* coeficiente shx de distorsion de la senal */
-    int   pausa;          /* 1 = animacion pausada */
+    /* --- Auto-animacion --- */
+    float vehiculo_tx;      /* traslacion X del vehiculo rojo   */
+    float angulo_rueda;     /* angulo de ruedas del vehiculo    */
+    float nube_tx;          /* posicion X de la nube            */
+    float shear_senal;      /* shear de la senal de transito    */
+    int   pausa;            /* 1 = animacion pausada            */
+
+    /* --- Seleccion de objeto activo --- */
+    int   objeto_sel;       /* OBJ_VEHICULO_ROJO / BUS_AZUL / ED_NARANJA / ED_AZUL */
+
+    /* --- Bus azul (auto-traslacion + manual con flechas) --- */
+    float bus_tx;
+    float bus_angulo;
+
+    /* --- Edificio naranja: todas las transformaciones manuales --- */
+    float ed_naranja_tx;
+    float ed_naranja_ty;
+    float ed_naranja_escala;
+    float ed_naranja_angulo;
+    float ed_naranja_shear;
+    int   ed_naranja_reflejo;
+
+    /* --- Edificio azul: todas las transformaciones manuales --- */
+    float ed_azul_tx;
+    float ed_azul_ty;
+    float ed_azul_escala;
+    float ed_azul_angulo;
+    float ed_azul_shear;
+    int   ed_azul_reflejo;
 } EstadoAnim;
 
 #endif
