@@ -49,6 +49,62 @@ static void panel_borde(float x, float y, float w, float h, Color c)
     glEnd();
 }
 
+static Color mezclar(Color a, Color b, float t)
+{
+    Color r;
+    if (t < 0.0f) t = 0.0f;
+    if (t > 1.0f) t = 1.0f;
+    r.r = (unsigned char)((1.0f-t)*a.r + t*b.r);
+    r.g = (unsigned char)((1.0f-t)*a.g + t*b.g);
+    r.b = (unsigned char)((1.0f-t)*a.b + t*b.b);
+    return r;
+}
+
+static Color aclarar(Color c, float t) { return mezclar(c, (Color){255,255,255}, t); }
+static Color oscurecer(Color c, float t) { return mezclar(c, (Color){0,0,0}, t); }
+
+/* Primitivas decorativas. Los contornos principales siguen usando los
+ * algoritmos academicos de Bresenham, punto medio y scan-line. */
+static void circulo_relleno(Punto c, int radio, Color color)
+{
+    glColor3ub(color.r, color.g, color.b);
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex2i(c.x, c.y);
+    for (int i = 0; i <= 40; ++i) {
+        float a = 6.2831853f * (float)i / 40.0f;
+        glVertex2f((float)c.x + radio*cosf(a), (float)c.y + radio*sinf(a));
+    }
+    glEnd();
+}
+
+static void fondo_degradado(Rectangulo r, Color inferior, Color superior, int bandas)
+{
+    for (int i = 0; i < bandas; ++i) {
+        int y0 = r.y + (r.alto*i)/bandas;
+        int y1 = r.y + (r.alto*(i+1))/bandas;
+        Color c = mezclar(inferior, superior, (float)i/(float)(bandas-1));
+        dibujar_rectangulo((Rectangulo){r.x,y0,r.ancho,y1-y0+1}, c, c, VENTANA_RECORTE);
+    }
+}
+
+static void dibujar_silueta_lejana(void)
+{
+    const int anchos[] = {65,48,80,55,72,44,70,62,75,50,64,55};
+    const int altos[]  = {105,72,128,90,116,68,98,122,82,108,74,118};
+    int x = 60;
+    Color base = {91,137,166};
+    for (int i = 0; i < 12; ++i) {
+        Color c = (i%2) ? base : aclarar(base, .07f);
+        dibujar_rectangulo((Rectangulo){x,140,anchos[i],altos[i]}, c, c, VENTANA_RECORTE);
+        /* Antenas y unas pocas ventanas dan escala sin competir con el frente. */
+        if (i%3 == 0)
+            dibujar_linea_bresenham((Punto){x+anchos[i]/2,140+altos[i]},
+                                    (Punto){x+anchos[i]/2,153+altos[i]},
+                                    oscurecer(c,.15f), VENTANA_RECORTE);
+        x += anchos[i] + 10;
+    }
+}
+
 /* =============================================================================
    MATRIZ COMPUESTA PARA EDIFICIOS
    Orden de aplicacion al punto (derecha a izquierda):
@@ -77,10 +133,29 @@ static Mat3 mat_edificio(
 
 static void dibujar_edificio_t(const Edificio *ed, Mat3 M)
 {
+    /* Sombra proyectada y franja lateral: convierten el bloque plano en volumen. */
+    Poligono sombra_p = rectangulo_a_poligono((Rectangulo){
+        ed->cuerpo.x + 8, ed->cuerpo.y - 7, ed->cuerpo.ancho, ed->cuerpo.alto});
+    Poligono sombra_t = mat3_poligono(M, &sombra_p);
+    dibujar_poligono_relleno(&sombra_t, (Color){45,65,78}, (Color){45,65,78}, VENTANA_RECORTE);
+
     /* Cuerpo */
     Poligono cuerpo_p = rectangulo_a_poligono(ed->cuerpo);
     Poligono cuerpo_t = mat3_poligono(M, &cuerpo_p);
     dibujar_poligono_relleno(&cuerpo_t, ed->relleno, ed->contorno, VENTANA_RECORTE);
+
+    Rectangulo brillo = {ed->cuerpo.x+5, ed->cuerpo.y+8, 7, ed->cuerpo.alto-16};
+    Poligono brillo_p = rectangulo_a_poligono(brillo);
+    Poligono brillo_t = mat3_poligono(M, &brillo_p);
+    dibujar_poligono_relleno(&brillo_t, aclarar(ed->relleno,.24f),
+                             aclarar(ed->relleno,.24f), VENTANA_RECORTE);
+
+    Rectangulo azotea = {ed->cuerpo.x-3, ed->cuerpo.y+ed->cuerpo.alto-7,
+                         ed->cuerpo.ancho+6, 10};
+    Poligono azotea_p = rectangulo_a_poligono(azotea);
+    Poligono azotea_t = mat3_poligono(M, &azotea_p);
+    dibujar_poligono_relleno(&azotea_t, aclarar(ed->relleno,.15f),
+                             ed->contorno, VENTANA_RECORTE);
 
     /* Ventanas */
     const int mg_h = 16, mg_v = 22, sep_h = 14, sep_v = 18;
@@ -98,7 +173,10 @@ static void dibujar_edificio_t(const Edificio *ed, Mat3 M)
             };
             Poligono vp = rectangulo_a_poligono(ven);
             Poligono vt = mat3_poligono(M, &vp);
-            dibujar_poligono_relleno(&vt, ed->ventanas, ed->contorno, VENTANA_RECORTE);
+            dibujar_poligono_relleno(&vt, ed->ventanas, oscurecer(ed->relleno,.45f), VENTANA_RECORTE);
+            Punto a = mat3_punto(M, (Punto){ven.x+ven.ancho/2, ven.y+2});
+            Punto b = mat3_punto(M, (Punto){ven.x+ven.ancho/2, ven.y+ven.alto-2});
+            dibujar_linea_bresenham(a, b, aclarar(ed->relleno,.45f), VENTANA_RECORTE);
         }
 }
 
@@ -121,6 +199,14 @@ static void dibujar_bus_t(const Vehiculo *v, Mat3 M, float ang)
     Poligono cuerpo_p = rectangulo_a_poligono(v->cuerpo);
     Poligono cuerpo_t = mat3_poligono(M, &cuerpo_p);
     dibujar_poligono_relleno(&cuerpo_t, v->color_cuerpo, v->contorno, VENTANA_RECORTE);
+
+    Rectangulo franja = {v->cuerpo.x+8, v->cuerpo.y+24, v->cuerpo.ancho-16, 5};
+    Poligono franja_t = mat3_poligono(M, &(Poligono){
+        .puntos={{franja.x,franja.y},{franja.x+franja.ancho,franja.y},
+                 {franja.x+franja.ancho,franja.y+franja.alto},{franja.x,franja.y+franja.alto}},
+        .cantidad=4});
+    dibujar_poligono_relleno(&franja_t, aclarar(v->color_cuerpo,.42f),
+                             aclarar(v->color_cuerpo,.42f), VENTANA_RECORTE);
 
     /* Frente / parabrisas (lado izquierdo: frente del bus hacia la izquierda) */
     Poligono cabina_t = mat3_poligono(M, &v->cabina);
@@ -145,6 +231,9 @@ static void dibujar_bus_t(const Vehiculo *v, Mat3 M, float ang)
     for (int i = 0; i < 2; i++) {
         Punto centro = mat3_punto(M, v->ruedas[i]);
         dibujar_circulo_punto_medio(centro, v->radio_rueda, v->color_rueda, VENTANA_RECORTE);
+        circulo_relleno(centro, v->radio_rueda-2, v->color_rueda);
+        dibujar_circulo_punto_medio(centro, v->radio_rueda, (Color){8,18,30}, VENTANA_RECORTE);
+        circulo_relleno(centro, v->radio_rueda/2, (Color){74,91,108});
         dibujar_circulo_punto_medio(centro, v->radio_rueda / 2, (Color){55,55,55}, VENTANA_RECORTE);
 
         const Color c_espolon = {180, 180, 180};
@@ -169,8 +258,19 @@ static void dibujar_vehiculo_t(const Vehiculo *v, Mat3 M, float ang_rueda)
     Poligono cuerpo_t = mat3_poligono(M, &cuerpo_p);
     dibujar_poligono_relleno(&cuerpo_t, v->color_cuerpo, v->contorno, VENTANA_RECORTE);
 
+    Rectangulo brillo = {v->cuerpo.x+12,v->cuerpo.y+v->cuerpo.alto-10,
+                         v->cuerpo.ancho-24,5};
+    Poligono bp = rectangulo_a_poligono(brillo);
+    Poligono bt = mat3_poligono(M,&bp);
+    dibujar_poligono_relleno(&bt, aclarar(v->color_cuerpo,.38f),
+                             aclarar(v->color_cuerpo,.38f), VENTANA_RECORTE);
+
     Poligono cabina_t = mat3_poligono(M, &v->cabina);
     dibujar_poligono_relleno(&cabina_t, v->color_cabina, v->contorno, VENTANA_RECORTE);
+    /* Cristales separados con reflejo diagonal. */
+    Punto techo0 = mat3_punto(M,(Punto){388,174});
+    Punto techo1 = mat3_punto(M,(Punto){442,174});
+    dibujar_linea_bresenham(techo0,techo1,aclarar(v->color_cabina,.55f),VENTANA_RECORTE);
 
     Punto sep0 = mat3_punto(M, (Punto){v->cuerpo.x + 82, v->cuerpo.y});
     Punto sep1 = mat3_punto(M, (Punto){v->cuerpo.x + 82, v->cuerpo.y + v->cuerpo.alto});
@@ -179,6 +279,9 @@ static void dibujar_vehiculo_t(const Vehiculo *v, Mat3 M, float ang_rueda)
     for (int i = 0; i < 2; i++) {
         Punto centro = mat3_punto(M, v->ruedas[i]);
         dibujar_circulo_punto_medio(centro, v->radio_rueda, v->color_rueda, VENTANA_RECORTE);
+        circulo_relleno(centro, v->radio_rueda-2, v->color_rueda);
+        dibujar_circulo_punto_medio(centro, v->radio_rueda, (Color){12,12,17}, VENTANA_RECORTE);
+        circulo_relleno(centro, v->radio_rueda/2, (Color){86,88,94});
         dibujar_circulo_punto_medio(centro, v->radio_rueda / 2, (Color){60,60,60}, VENTANA_RECORTE);
 
         const Color c_espolon = {190, 190, 190};
@@ -256,7 +359,18 @@ static void dibujar_arbol_t(const Arbol *arbol, Mat3 M)
     Poligono copa_t   = mat3_poligono(M, &arbol->copa);
 
     dibujar_poligono_relleno(&tronco_t, arbol->color_tronco, arbol->contorno, VENTANA_RECORTE);
-    dibujar_poligono_relleno(&copa_t,   arbol->color_copa,   arbol->contorno, VENTANA_RECORTE);
+    dibujar_poligono_relleno(&copa_t, oscurecer(arbol->color_copa,.12f),
+                             arbol->contorno, VENTANA_RECORTE);
+
+    /* Capas de follaje sobre la silueta triangular original. */
+    Punto centro = mat3_punto(M, (Punto){
+        arbol->tronco.x + arbol->tronco.ancho/2,
+        arbol->tronco.y + arbol->tronco.alto + 33});
+    Color hoja = arbol->color_copa;
+    circulo_relleno((Punto){centro.x-24,centro.y-4},25,oscurecer(hoja,.08f));
+    circulo_relleno((Punto){centro.x+23,centro.y-3},27,hoja);
+    circulo_relleno((Punto){centro.x,centro.y+20},31,aclarar(hoja,.08f));
+    circulo_relleno((Punto){centro.x-8,centro.y+31},12,aclarar(hoja,.22f));
 }
 
 /* =============================================================================
@@ -271,20 +385,43 @@ static void dibujar_casa(const Casa *casa)
     const Color c_puerta = {129, 84, 51};
     const Color c_vent   = {186, 228, 247};
 
+    dibujar_rectangulo((Rectangulo){casa->cuerpo.x+8,casa->cuerpo.y-5,
+                                    casa->cuerpo.ancho,casa->cuerpo.alto},
+                       (Color){70,76,78}, (Color){70,76,78}, VENTANA_RECORTE);
     dibujar_rectangulo(casa->cuerpo, casa->color_cuerpo, casa->contorno, VENTANA_RECORTE);
+    dibujar_rectangulo((Rectangulo){casa->cuerpo.x+5,casa->cuerpo.y+8,6,casa->cuerpo.alto-16},
+                       aclarar(casa->color_cuerpo,.35f), aclarar(casa->color_cuerpo,.35f),
+                       VENTANA_RECORTE);
     dibujar_poligono_relleno(&casa->techo, casa->color_techo, casa->contorno, VENTANA_RECORTE);
     dibujar_rectangulo(puerta,   c_puerta, casa->contorno, VENTANA_RECORTE);
     dibujar_rectangulo(vent_izq, c_vent,   casa->contorno, VENTANA_RECORTE);
     dibujar_rectangulo(vent_der, c_vent,   casa->contorno, VENTANA_RECORTE);
+    dibujar_linea_bresenham((Punto){vent_izq.x+14,vent_izq.y},
+                            (Punto){vent_izq.x+14,vent_izq.y+26}, casa->contorno, VENTANA_RECORTE);
+    dibujar_linea_bresenham((Punto){vent_der.x+14,vent_der.y},
+                            (Punto){vent_der.x+14,vent_der.y+26}, casa->contorno, VENTANA_RECORTE);
+    circulo_relleno((Punto){puerta.x+19,puerta.y+29},2,(Color){242,198,73});
 }
 
 static void dibujar_carretera(const Carretera *carretera)
 {
+    dibujar_rectangulo((Rectangulo){0,132,900,14}, (Color){210,202,188},
+                       (Color){210,202,188}, VENTANA_RECORTE);
     dibujar_rectangulo(carretera->cuerpo, carretera->relleno, carretera->contorno, VENTANA_RECORTE);
+    dibujar_rectangulo((Rectangulo){0,62,900,9}, oscurecer(carretera->relleno,.17f),
+                       oscurecer(carretera->relleno,.17f), VENTANA_RECORTE);
     for (int i = 0; i < carretera->cantidad_divisores; ++i)
-        dibujar_linea_bresenham(carretera->divisores[i].inicio,
-                                carretera->divisores[i].fin,
-                                carretera->color_divisor, VENTANA_RECORTE);
+        for (int grosor=-2; grosor<=2; ++grosor)
+            dibujar_linea_bresenham(
+                (Punto){carretera->divisores[i].inicio.x,
+                        carretera->divisores[i].inicio.y+grosor},
+                (Punto){carretera->divisores[i].fin.x,
+                        carretera->divisores[i].fin.y+grosor},
+                carretera->color_divisor, VENTANA_RECORTE);
+    /* Marcas finas del asfalto para romper la superficie uniforme. */
+    for (int x=80; x<840; x+=125)
+        dibujar_linea_bresenham((Punto){x,77+(x%3)*5},(Punto){x+28,76+(x%3)*5},
+                                (Color){89,92,102},VENTANA_RECORTE);
 }
 
 static void dibujar_semaforo(const Semaforo *semaforo, int fase)
@@ -296,11 +433,19 @@ static void dibujar_semaforo(const Semaforo *semaforo, int fase)
         {14, 42, 20}    /* verde apagado    */
     };
 
+    dibujar_rectangulo((Rectangulo){semaforo->poste.x+5,semaforo->poste.y-2,
+                                    semaforo->poste.ancho,semaforo->poste.alto},
+                       (Color){49,55,61},(Color){49,55,61},VENTANA_RECORTE);
     dibujar_rectangulo(semaforo->poste, semaforo->color_poste, semaforo->contorno, VENTANA_RECORTE);
     dibujar_rectangulo(semaforo->caja,  semaforo->color_caja,  semaforo->contorno, VENTANA_RECORTE);
 
     for (int i = 0; i < 3; ++i) {
         Color c = (i == fase) ? semaforo->colores_luces[i] : DIM[i];
+        /* Pequena visera sobre cada lente. */
+        dibujar_linea_bresenham((Punto){semaforo->luces[i].x-12,semaforo->luces[i].y+11},
+                                (Punto){semaforo->luces[i].x+12,semaforo->luces[i].y+11},
+                                (Color){18,21,24},VENTANA_RECORTE);
+        circulo_relleno(semaforo->luces[i], semaforo->radio-1, c);
         dibujar_circulo_punto_medio(semaforo->luces[i], semaforo->radio, c, VENTANA_RECORTE);
     }
 
@@ -313,10 +458,14 @@ static void dibujar_semaforo(const Semaforo *semaforo, int fase)
 
 static void dibujar_sol(const Sol *sol)
 {
+    circulo_relleno(sol->centro, sol->radio+12, (Color){255,224,139});
     for (int i = 0; i < sol->cantidad_rayos; ++i)
         dibujar_linea_bresenham(sol->rayos[i].inicio, sol->rayos[i].fin,
                                 sol->color, VENTANA_RECORTE);
     dibujar_circulo_punto_medio(sol->centro, sol->radio, sol->color, VENTANA_RECORTE);
+    circulo_relleno(sol->centro, sol->radio-2, sol->color);
+    circulo_relleno((Punto){sol->centro.x-12,sol->centro.y+13},11,
+                    aclarar(sol->color,.32f));
 }
 
 static void dibujar_nube(float tx, float ty, const Color *color, float escala)
@@ -324,6 +473,12 @@ static void dibujar_nube(float tx, float ty, const Color *color, float escala)
     Mat3 M = mat3_mul(mat3_traslacion(tx, ty), mat3_escala(escala, escala));
     Poligono nube_t = mat3_poligono(M, &NUBE_BASE);
     dibujar_poligono_relleno(&nube_t, *color, *color, VENTANA_RECORTE);
+    Punto c1 = mat3_punto(M,(Punto){-27,0});
+    Punto c2 = mat3_punto(M,(Punto){0,8});
+    Punto c3 = mat3_punto(M,(Punto){29,0});
+    circulo_relleno(c1,(int)(22*escala),*color);
+    circulo_relleno(c2,(int)(28*escala),aclarar(*color,.09f));
+    circulo_relleno(c3,(int)(21*escala),*color);
 }
 
 static void dibujar_borde_ventana(void)
@@ -406,7 +561,7 @@ static void dibujar_etiquetas(const EstadoAnim *e)
 static void dibujar_panel_hud(const EstadoAnim *e)
 {
     /* --- Colores del panel --- */
-    const Color fondo_panel  = {18,  22,  38};
+    const Color fondo_panel  = {13,  18,  31};
     const Color blanco       = {255, 255, 255};
     const Color gris_claro   = {180, 185, 200};
     const Color amarillo_hud = {245, 215,  60};
@@ -426,6 +581,8 @@ static void dibujar_panel_hud(const EstadoAnim *e)
 
     /* ===== PANEL SUPERIOR (y=621..700) ===== */
     panel_rect(0.0f, 621.0f, 900.0f, 79.0f, fondo_panel);
+    panel_rect(0.0f, 621.0f, 7.0f, 79.0f, (Color){55,185,220});
+    panel_rect(0.0f, 621.0f, 900.0f, 2.0f, (Color){45,70,95});
 
     /* Titulo */
     dibujar_texto(65.0f, 682.0f, "ESCENA URBANA 2D  -  ENTREGA 2: TRANSFORMACIONES GEOMETRICAS", blanco);
@@ -450,6 +607,8 @@ static void dibujar_panel_hud(const EstadoAnim *e)
         Color txt = (e->objeto_sel == i) ? tab_texto_sel[i] : gris_claro;
         panel_rect(tx, tab_y, tab_w, tab_h, bg);
         if (e->objeto_sel == i)
+            panel_rect(tx, tab_y, tab_w, 3.0f, tab_texto_sel[i]);
+        if (e->objeto_sel == i)
             panel_borde(tx, tab_y, tab_w, tab_h, tab_texto_sel[i]);
         dibujar_texto(tx + 6.0f, tab_y + 7.0f, tab_nombre[i], txt);
     }
@@ -459,6 +618,7 @@ static void dibujar_panel_hud(const EstadoAnim *e)
 
     /* ===== PANEL INFERIOR (y=0..59) ===== */
     panel_rect(0.0f, 0.0f, 900.0f, 59.0f, fondo_panel);
+    panel_rect(0.0f, 0.0f, 7.0f, 59.0f, (Color){55,185,220});
 
     /* Linea separadora superior del panel inferior */
     glColor3ub(40, 50, 80);
@@ -520,12 +680,14 @@ static void dibujar_panel_hud(const EstadoAnim *e)
 
 void dibujar_escena_animada(const EstadoAnim *estado)
 {
-    const Color c_cielo  = {121, 193, 244};
-    const Color c_cesped = {121, 183,  96};
+    const Color c_cielo_inf = {151, 211, 235};
+    const Color c_cielo_sup = {57, 133, 196};
+    const Color c_cesped_inf = {72, 132, 72};
+    const Color c_cesped_sup = {128, 181, 92};
 
     /* --- Fondo --- */
-    dibujar_rectangulo(ESCENA_URBANA.cielo,  c_cielo,  c_cielo,  VENTANA_RECORTE);
-    dibujar_rectangulo(ESCENA_URBANA.cesped, c_cesped, c_cesped, VENTANA_RECORTE);
+    fondo_degradado(ESCENA_URBANA.cielo, c_cielo_inf, c_cielo_sup, 18);
+    fondo_degradado(ESCENA_URBANA.cesped, c_cesped_inf, c_cesped_sup, 8);
     dibujar_sol(&ESCENA_URBANA.sol);
 
     /* --- TRASLACION: nubes --- */
@@ -535,6 +697,8 @@ void dibujar_escena_animada(const EstadoAnim *estado)
         if (tx2 < -130.0f) tx2 += 1090.0f;
         dibujar_nube(tx2, 540.0f, &COLOR_NUBE_2, 0.75f);
     }
+
+    dibujar_silueta_lejana();
 
     /* --- Edificio morado: estatico (no se transforma) --- */
     dibujar_edificio(&ESCENA_URBANA.edificios[1]);
