@@ -250,7 +250,7 @@ Se muestra el contorno original tenue como referencia de comparacion.
 |---|---|---|
 | Lenguaje | C++ 17 | C 11 |
 | Ventana / bucle | GLFW 3 | GLUT (freeglut) |
-| Carga de extensiones | GLEW | no necesario (OpenGL legacy) |
+| Carga de extensiones | GLEW | GLEW (`glewInit()` tras `glutCreateWindow`) |
 | Algebra lineal | GLM (`glm::mat3`, `glm::value_ptr`) | `Mat3` implementado en `transformaciones.c` |
 | Aplicacion de la matriz | GPU — vertex shader `uniform mat3 uTransform` | CPU — `mat3_punto()` antes de Bresenham/scan-line |
 | Pipeline OpenGL | 3.3 Core Profile (VAO/VBO/shaders) | Legacy (`glBegin/glEnd`, `GL_POINTS`) |
@@ -268,14 +268,15 @@ por los mismos algoritmos de la Entrega 1.
 
 | Libreria | Header | Para que se usa |
 |---|---|---|
-| OpenGL | `GL/gl.h` (via glut) | `glBegin/glEnd`, `glVertex2i`, `glColor3ub` |
+| GLEW | `GL/glew.h` | Carga de extensiones OpenGL; debe incluirse antes que GLUT |
+| OpenGL | `GL/gl.h` (via glew/glut) | `glBegin/glEnd`, `glVertex2i`, `glColor3ub` |
 | GLU | `GL/glu.h` (via glut) | `gluOrtho2D` para proyeccion 2D |
 | GLUT (freeglut) | `GL/glut.h` | Ventana, doble buffer, timer animado, teclado |
 | math.h | `<math.h>` | `cosf`, `sinf`, `roundf`, `fabsf` para matrices |
 
 Instalacion en Ubuntu/Debian:
 ```bash
-sudo apt install build-essential freeglut3-dev
+sudo apt install build-essential freeglut3-dev libglew-dev
 ```
 
 ---

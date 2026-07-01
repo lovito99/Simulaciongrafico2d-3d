@@ -1,3 +1,4 @@
+#include <GL/glew.h>
 #include <GL/glut.h>
 #include <math.h>
 #include <stdlib.h>
@@ -285,6 +286,7 @@ int main(int argc, char **argv)
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
     glutInitWindowSize(ANCHO_VENTANA, ALTO_VENTANA);
     glutCreateWindow("Entrega 2 - Transformaciones Geometricas 2D");
+    glewInit();
 
     init();
     glutDisplayFunc(display);
