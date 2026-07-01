@@ -84,7 +84,12 @@ static void fondo_degradado(Rectangulo r, Color inferior, Color superior, int ba
         int y0 = r.y + (r.alto*i)/bandas;
         int y1 = r.y + (r.alto*(i+1))/bandas;
         Color c = mezclar(inferior, superior, (float)i/(float)(bandas-1));
-        dibujar_rectangulo((Rectangulo){r.x,y0,r.ancho,y1-y0+1}, c, c, VENTANA_RECORTE);
+        /* El fondo no requiere scan-line ni clipping por pixel: un quad por
+         * banda reduce considerablemente el trabajo de cada fotograma. */
+        float x0 = (float)((r.x < VENTANA_RECORTE.xmin) ? VENTANA_RECORTE.xmin : r.x);
+        float x1 = (float)(((r.x+r.ancho) > VENTANA_RECORTE.xmax)
+                           ? VENTANA_RECORTE.xmax : (r.x+r.ancho));
+        panel_rect(x0, (float)y0, x1-x0, (float)(y1-y0+1), c);
     }
 }
 
@@ -209,19 +214,18 @@ static void dibujar_bus_t(const Vehiculo *v, Mat3 M, float ang)
     dibujar_poligono_relleno(&franja_t, aclarar(v->color_cuerpo,.42f),
                              aclarar(v->color_cuerpo,.42f), VENTANA_RECORTE);
 
-    /* Parabrisas (lado derecho: frente del bus al entrar por la derecha) */
+    /* Parabrisas izquierdo: frente coherente con el avance hacia la izquierda. */
     Poligono cabina_t = mat3_poligono(M, &v->cabina);
     dibujar_poligono_relleno(&cabina_t, v->color_cabina, v->contorno, VENTANA_RECORTE);
 
-    /* Ventanas: 5 unidades desde x+8 hasta el parabrisas (x+196).
-     * Espacio util = 188px  →  5*28 + 4*bgap = 188  →  bgap = (188-140)/4 = 12  */
+    /* Seis ventanas aprovechan la carroceria ampliada. */
     {
         const Color c_vent     = {185, 220, 255};
         const Color c_cont_ven = {18,  55,  115};
-        const int bx0 = v->cuerpo.x + 8;
+        const int bx0 = v->cuerpo.x + 55;
         const int by  = v->cuerpo.y + 5;
-        const int bw  = 28, bh = 14, bgap = 12;
-        for (int i = 0; i < 5; i++) {
+        const int bw  = 27, bh = 14, bgap = 7;
+        for (int i = 0; i < 6; i++) {
             Rectangulo ven = {bx0 + i*(bw+bgap), by, bw, bh};
             Poligono vp = rectangulo_a_poligono(ven);
             Poligono vt = mat3_poligono(M, &vp);
@@ -270,8 +274,8 @@ static void dibujar_vehiculo_t(const Vehiculo *v, Mat3 M, float ang_rueda)
     Poligono cabina_t = mat3_poligono(M, &v->cabina);
     dibujar_poligono_relleno(&cabina_t, v->color_cabina, v->contorno, VENTANA_RECORTE);
     /* Cristales separados con reflejo diagonal. */
-    Punto techo0 = mat3_punto(M,(Punto){388,174});
-    Punto techo1 = mat3_punto(M,(Punto){442,174});
+    Punto techo0 = mat3_punto(M,(Punto){395,102});
+    Punto techo1 = mat3_punto(M,(Punto){468,102});
     dibujar_linea_bresenham(techo0,techo1,aclarar(v->color_cabina,.55f),VENTANA_RECORTE);
 
     Punto sep0 = mat3_punto(M, (Punto){v->cuerpo.x + 82, v->cuerpo.y});
@@ -510,10 +514,10 @@ static void dibujar_etiquetas(const EstadoAnim *e)
     const Color lila     = {200, 140, 255};
 
     /* Vehiculo rojo: traslacion + rotacion + composicion */
-    dibujar_texto(250.0f, 165.0f, "TRASLACION + ROTACION + COMPOSICION", amarillo);
+    dibujar_texto(250.0f, 148.0f, "CARRO: CARRIL INFERIOR + ROTACION", amarillo);
 
     /* Bus azul */
-    dibujar_texto(300.0f, 192.0f, "BUS AZUL: TRASLACION (carril contrario)", cian);
+    dibujar_texto(300.0f, 192.0f, "BUS: CARRIL SUPERIOR (sentido contrario)", cian);
 
     /* Senal: distorsion shear automatica */
     dibujar_texto(690.0f, 285.0f, "SHEAR", rosa);
@@ -749,12 +753,12 @@ void dibujar_escena_animada(const EstadoAnim *estado)
     /* --- REFLEXION EJE-X: vehiculo rojo reflejado en el piso ---
      *   M = Ref_x(88) * T(tx,0)                                     */
     dibujar_vehiculo_reflexion(&ESCENA_URBANA.vehiculo,
-                               estado->vehiculo_tx, 88.0f);
+                               estado->vehiculo_tx, 70.0f);
     {
         const Color c_eje = {160, 60, 60};
         dibujar_linea_bresenham(
-            (Punto){VENTANA_RECORTE.xmin, 88},
-            (Punto){VENTANA_RECORTE.xmax, 88},
+            (Punto){VENTANA_RECORTE.xmin, 70},
+            (Punto){VENTANA_RECORTE.xmax, 70},
             c_eje, VENTANA_RECORTE);
     }
 

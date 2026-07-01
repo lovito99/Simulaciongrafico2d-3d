@@ -2,22 +2,21 @@
 
 /*
  * BUS AZUL
- * Cuerpo en coordenadas locales: x=0..240, y=109..140 (carril superior y=100..140).
+ * Cuerpo en coordenadas locales: x=0..270, y=112..140 (carril superior).
  * Viaja de derecha a izquierda (carril superior).
- * Parabrisas en el lado DERECHO (x=196..240): en 2D el bus entra por la
- * derecha mostrando su frente primero, dando aspecto de avance hacia adelante.
- * Ruedas: radio=13, centros en y=109 para quedar dentro del carril superior.
- * Rueda trasera x=44, rueda delantera x=168 (deja libre x=182..196 antes del parabrisas).
+ * Parabrisas en el lado IZQUIERDO: coincide con su movimiento derecha -> izquierda.
+ * Ruedas: radio=9, centros en y=114; su limite inferior es y=105.
+ * Rueda delantera x=46 y trasera x=224.
  * Offset de posicion en pantalla: mat3_traslacion(bus_tx, 0).
  */
 const Vehiculo BUS_AZUL = {
-    .cuerpo = {0, 109, 240, 31},
+    .cuerpo = {0, 112, 270, 28},
     .cabina = {
-        .puntos  = {{240, 140}, {240, 109}, {212, 109}, {196, 140}},
+        .puntos  = {{0, 140}, {0, 112}, {32, 112}, {50, 140}},
         .cantidad = 4
     },
-    .ruedas      = {{44, 109}, {168, 109}},
-    .radio_rueda = 13,
+    .ruedas      = {{46, 114}, {224, 114}},
+    .radio_rueda = 9,
     .color_cuerpo = {55, 125, 210},
     .color_cabina = {110, 175, 235},
     .color_rueda  = {22, 22, 22},
@@ -103,13 +102,14 @@ const Escena ESCENA_URBANA = {
     },
     .cantidad_arboles = 2,
     .vehiculo = {
-        .cuerpo = {300, 88, 185, 48},
+        /* Carril inferior: todo el carro termina antes de y=100. */
+        .cuerpo = {300, 70, 220, 24},
         .cabina = {
-            .puntos = {{338, 136}, {388, 178}, {445, 178}, {470, 136}},
+            .puntos = {{340, 94}, {395, 104}, {470, 104}, {500, 94}},
             .cantidad = 4
         },
-        .ruedas = {{342, 88}, {442, 88}},
-        .radio_rueda = 18,
+        .ruedas = {{350, 70}, {475, 70}},
+        .radio_rueda = 10,
         .color_cuerpo = {218, 62, 72},
         .color_cabina = {240, 125, 131},
         .color_rueda = {24, 24, 24},
