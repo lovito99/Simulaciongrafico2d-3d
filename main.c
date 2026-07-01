@@ -39,9 +39,13 @@ EstadoAnim ESTADO = {
 
 static float shear_dir = 1.0f;
 
-#define PASO_TX   8.0f
-#define PASO_TY   8.0f
-#define PASO_VEH  14.0f
+/* Pasos por fotograma (60 fps) para teclas mantenidas */
+#define PASO_TX    1.8f
+#define PASO_TY    1.8f
+#define PASO_VEH   2.5f
+#define PASO_ESC   0.012f
+#define PASO_ANG   0.012f
+#define PASO_SH    0.010f
 
 static void setup_proyeccion(int ancho, int alto)
 {
@@ -59,159 +63,159 @@ static void cb_tamano(GLFWwindow *win, int ancho, int alto)
     setup_proyeccion(ancho, alto);
 }
 
+/* -------------------------------------------------------------------------
+   Teclas de disparo unico (toggle): se gestionan en el callback
+   ------------------------------------------------------------------------- */
 static void cb_teclado(GLFWwindow *win, int key, int scancode, int action, int mods)
 {
-    (void)win; (void)scancode; (void)mods;
-    if (action == GLFW_RELEASE) return;
+    (void)scancode; (void)mods;
+    if (action != GLFW_PRESS) return;   /* solo primer pulsado */
 
     switch (key) {
-
-    /* ---- Control global ---- */
     case GLFW_KEY_ESCAPE:
         glfwSetWindowShouldClose(win, GLFW_TRUE);
         break;
     case GLFW_KEY_SPACE:
-        if (action == GLFW_PRESS) ESTADO.pausa = !ESTADO.pausa;
+        ESTADO.pausa = !ESTADO.pausa;
         break;
 
-    /* ---- Seleccion de objeto ---- */
+    /* Seleccion de objeto */
     case GLFW_KEY_1: ESTADO.objeto_sel = OBJ_VEHICULO_ROJO; break;
     case GLFW_KEY_2: ESTADO.objeto_sel = OBJ_BUS_AZUL;      break;
     case GLFW_KEY_3: ESTADO.objeto_sel = OBJ_ED_NARANJA;    break;
     case GLFW_KEY_4: ESTADO.objeto_sel = OBJ_ED_AZUL;       break;
     case GLFW_KEY_TAB:
-        if (action == GLFW_PRESS)
-            ESTADO.objeto_sel = (ESTADO.objeto_sel + 1) % 4;
+        ESTADO.objeto_sel = (ESTADO.objeto_sel + 1) % 4;
         break;
 
-    /* ---- Reset del objeto activo ---- */
-    case GLFW_KEY_0:
-        if (action == GLFW_PRESS) {
-            switch (ESTADO.objeto_sel) {
-            case OBJ_VEHICULO_ROJO:
-                ESTADO.vehiculo_tx = 0.0f;
-                break;
-            case OBJ_BUS_AZUL:
-                ESTADO.bus_tx = 960.0f;
-                break;
-            case OBJ_ED_NARANJA:
-                ESTADO.ed_naranja_tx = ESTADO.ed_naranja_ty = 0.0f;
-                ESTADO.ed_naranja_escala  = 1.0f;
-                ESTADO.ed_naranja_angulo  = 0.0f;
-                ESTADO.ed_naranja_shear   = 0.0f;
-                ESTADO.ed_naranja_reflejo = 0;
-                break;
-            case OBJ_ED_AZUL:
-                ESTADO.ed_azul_tx = ESTADO.ed_azul_ty = 0.0f;
-                ESTADO.ed_azul_escala  = 1.0f;
-                ESTADO.ed_azul_angulo  = 0.0f;
-                ESTADO.ed_azul_shear   = 0.0f;
-                ESTADO.ed_azul_reflejo = 0;
-                break;
-            }
-        }
-        break;
-
-    /* ---- Escala (E = agrandar, S = achicar) ---- */
-    case GLFW_KEY_E:
-        if (ESTADO.objeto_sel == OBJ_ED_NARANJA) {
-            ESTADO.ed_naranja_escala += 0.05f;
-            if (ESTADO.ed_naranja_escala > 3.0f) ESTADO.ed_naranja_escala = 3.0f;
-        } else if (ESTADO.objeto_sel == OBJ_ED_AZUL) {
-            ESTADO.ed_azul_escala += 0.05f;
-            if (ESTADO.ed_azul_escala > 3.0f) ESTADO.ed_azul_escala = 3.0f;
-        }
-        break;
-    case GLFW_KEY_S:
-        if (ESTADO.objeto_sel == OBJ_ED_NARANJA) {
-            ESTADO.ed_naranja_escala -= 0.05f;
-            if (ESTADO.ed_naranja_escala < 0.1f) ESTADO.ed_naranja_escala = 0.1f;
-        } else if (ESTADO.objeto_sel == OBJ_ED_AZUL) {
-            ESTADO.ed_azul_escala -= 0.05f;
-            if (ESTADO.ed_azul_escala < 0.1f) ESTADO.ed_azul_escala = 0.1f;
-        }
-        break;
-
-    /* ---- Rotacion (Q = antihoraria, W = horaria) ---- */
-    case GLFW_KEY_Q:
-        if (ESTADO.objeto_sel == OBJ_ED_NARANJA)
-            ESTADO.ed_naranja_angulo += 0.05f;
-        else if (ESTADO.objeto_sel == OBJ_ED_AZUL)
-            ESTADO.ed_azul_angulo += 0.05f;
-        break;
-    case GLFW_KEY_W:
-        if (ESTADO.objeto_sel == OBJ_ED_NARANJA)
-            ESTADO.ed_naranja_angulo -= 0.05f;
-        else if (ESTADO.objeto_sel == OBJ_ED_AZUL)
-            ESTADO.ed_azul_angulo -= 0.05f;
-        break;
-
-    /* ---- Distorsion shear (D = mas, F = menos) ---- */
-    case GLFW_KEY_D:
-        if (ESTADO.objeto_sel == OBJ_ED_NARANJA) {
-            ESTADO.ed_naranja_shear += 0.04f;
-            if (ESTADO.ed_naranja_shear > 1.5f) ESTADO.ed_naranja_shear = 1.5f;
-        } else if (ESTADO.objeto_sel == OBJ_ED_AZUL) {
-            ESTADO.ed_azul_shear += 0.04f;
-            if (ESTADO.ed_azul_shear > 1.5f) ESTADO.ed_azul_shear = 1.5f;
-        }
-        break;
-    case GLFW_KEY_F:
-        if (ESTADO.objeto_sel == OBJ_ED_NARANJA) {
-            ESTADO.ed_naranja_shear -= 0.04f;
-            if (ESTADO.ed_naranja_shear < -1.5f) ESTADO.ed_naranja_shear = -1.5f;
-        } else if (ESTADO.objeto_sel == OBJ_ED_AZUL) {
-            ESTADO.ed_azul_shear -= 0.04f;
-            if (ESTADO.ed_azul_shear < -1.5f) ESTADO.ed_azul_shear = -1.5f;
-        }
-        break;
-
-    /* ---- Reflexion (R = alternar) ---- */
+    /* Reflexion: toggle */
     case GLFW_KEY_R:
-        if (action == GLFW_PRESS) {
-            if (ESTADO.objeto_sel == OBJ_ED_NARANJA)
-                ESTADO.ed_naranja_reflejo = !ESTADO.ed_naranja_reflejo;
-            else if (ESTADO.objeto_sel == OBJ_ED_AZUL)
-                ESTADO.ed_azul_reflejo = !ESTADO.ed_azul_reflejo;
-        }
+        if (ESTADO.objeto_sel == OBJ_ED_NARANJA)
+            ESTADO.ed_naranja_reflejo = !ESTADO.ed_naranja_reflejo;
+        else if (ESTADO.objeto_sel == OBJ_ED_AZUL)
+            ESTADO.ed_azul_reflejo = !ESTADO.ed_azul_reflejo;
         break;
 
-    /* ---- Traslacion con flechas ---- */
-    case GLFW_KEY_LEFT:
+    /* Reset */
+    case GLFW_KEY_0:
         switch (ESTADO.objeto_sel) {
-        case OBJ_VEHICULO_ROJO: ESTADO.vehiculo_tx   -= PASO_VEH; break;
-        case OBJ_BUS_AZUL:     ESTADO.bus_tx         -= PASO_VEH; break;
-        case OBJ_ED_NARANJA:   ESTADO.ed_naranja_tx  -= PASO_TX;  break;
-        case OBJ_ED_AZUL:      ESTADO.ed_azul_tx     -= PASO_TX;  break;
-        }
-        break;
-    case GLFW_KEY_RIGHT:
-        switch (ESTADO.objeto_sel) {
-        case OBJ_VEHICULO_ROJO: ESTADO.vehiculo_tx   += PASO_VEH; break;
-        case OBJ_BUS_AZUL:     ESTADO.bus_tx         += PASO_VEH; break;
-        case OBJ_ED_NARANJA:   ESTADO.ed_naranja_tx  += PASO_TX;  break;
-        case OBJ_ED_AZUL:      ESTADO.ed_azul_tx     += PASO_TX;  break;
-        }
-        break;
-    case GLFW_KEY_UP:
-        switch (ESTADO.objeto_sel) {
-        case OBJ_ED_NARANJA: ESTADO.ed_naranja_ty += PASO_TY; break;
-        case OBJ_ED_AZUL:   ESTADO.ed_azul_ty    += PASO_TY; break;
-        default: break;
-        }
-        break;
-    case GLFW_KEY_DOWN:
-        switch (ESTADO.objeto_sel) {
-        case OBJ_ED_NARANJA: ESTADO.ed_naranja_ty -= PASO_TY; break;
-        case OBJ_ED_AZUL:   ESTADO.ed_azul_ty    -= PASO_TY; break;
-        default: break;
+        case OBJ_VEHICULO_ROJO:
+            ESTADO.vehiculo_tx = 0.0f;
+            break;
+        case OBJ_BUS_AZUL:
+            ESTADO.bus_tx = 960.0f;
+            break;
+        case OBJ_ED_NARANJA:
+            ESTADO.ed_naranja_tx = ESTADO.ed_naranja_ty = 0.0f;
+            ESTADO.ed_naranja_escala  = 1.0f;
+            ESTADO.ed_naranja_angulo  = 0.0f;
+            ESTADO.ed_naranja_shear   = 0.0f;
+            ESTADO.ed_naranja_reflejo = 0;
+            break;
+        case OBJ_ED_AZUL:
+            ESTADO.ed_azul_tx = ESTADO.ed_azul_ty = 0.0f;
+            ESTADO.ed_azul_escala  = 1.0f;
+            ESTADO.ed_azul_angulo  = 0.0f;
+            ESTADO.ed_azul_shear   = 0.0f;
+            ESTADO.ed_azul_reflejo = 0;
+            break;
         }
         break;
     }
 }
 
-static void actualizar(void)
+/* -------------------------------------------------------------------------
+   Teclas mantenidas: se leen con glfwGetKey() cada fotograma
+   (no dependen del retardo de repeticion del sistema operativo)
+   ------------------------------------------------------------------------- */
+static void procesar_teclas_continuas(GLFWwindow *win)
 {
+#define PULSADA(k) (glfwGetKey(win, (k)) == GLFW_PRESS)
+
+    /* --- Traslacion con flechas --- */
+    if (PULSADA(GLFW_KEY_LEFT)) {
+        switch (ESTADO.objeto_sel) {
+        case OBJ_VEHICULO_ROJO: ESTADO.vehiculo_tx  -= PASO_VEH; break;
+        case OBJ_BUS_AZUL:     ESTADO.bus_tx        -= PASO_VEH; break;
+        case OBJ_ED_NARANJA:   ESTADO.ed_naranja_tx -= PASO_TX;  break;
+        case OBJ_ED_AZUL:      ESTADO.ed_azul_tx    -= PASO_TX;  break;
+        }
+    }
+    if (PULSADA(GLFW_KEY_RIGHT)) {
+        switch (ESTADO.objeto_sel) {
+        case OBJ_VEHICULO_ROJO: ESTADO.vehiculo_tx  += PASO_VEH; break;
+        case OBJ_BUS_AZUL:     ESTADO.bus_tx        += PASO_VEH; break;
+        case OBJ_ED_NARANJA:   ESTADO.ed_naranja_tx += PASO_TX;  break;
+        case OBJ_ED_AZUL:      ESTADO.ed_azul_tx    += PASO_TX;  break;
+        }
+    }
+    if (PULSADA(GLFW_KEY_UP)) {
+        if (ESTADO.objeto_sel == OBJ_ED_NARANJA) ESTADO.ed_naranja_ty += PASO_TY;
+        else if (ESTADO.objeto_sel == OBJ_ED_AZUL) ESTADO.ed_azul_ty  += PASO_TY;
+    }
+    if (PULSADA(GLFW_KEY_DOWN)) {
+        if (ESTADO.objeto_sel == OBJ_ED_NARANJA) ESTADO.ed_naranja_ty -= PASO_TY;
+        else if (ESTADO.objeto_sel == OBJ_ED_AZUL) ESTADO.ed_azul_ty  -= PASO_TY;
+    }
+
+    /* --- Escala: E agrandar, S achicar --- */
+    if (PULSADA(GLFW_KEY_E)) {
+        if (ESTADO.objeto_sel == OBJ_ED_NARANJA) {
+            ESTADO.ed_naranja_escala += PASO_ESC;
+            if (ESTADO.ed_naranja_escala > 3.0f) ESTADO.ed_naranja_escala = 3.0f;
+        } else if (ESTADO.objeto_sel == OBJ_ED_AZUL) {
+            ESTADO.ed_azul_escala += PASO_ESC;
+            if (ESTADO.ed_azul_escala > 3.0f) ESTADO.ed_azul_escala = 3.0f;
+        }
+    }
+    if (PULSADA(GLFW_KEY_S)) {
+        if (ESTADO.objeto_sel == OBJ_ED_NARANJA) {
+            ESTADO.ed_naranja_escala -= PASO_ESC;
+            if (ESTADO.ed_naranja_escala < 0.1f) ESTADO.ed_naranja_escala = 0.1f;
+        } else if (ESTADO.objeto_sel == OBJ_ED_AZUL) {
+            ESTADO.ed_azul_escala -= PASO_ESC;
+            if (ESTADO.ed_azul_escala < 0.1f) ESTADO.ed_azul_escala = 0.1f;
+        }
+    }
+
+    /* --- Rotacion: Q antihoraria, W horaria --- */
+    if (PULSADA(GLFW_KEY_Q)) {
+        if (ESTADO.objeto_sel == OBJ_ED_NARANJA) ESTADO.ed_naranja_angulo += PASO_ANG;
+        else if (ESTADO.objeto_sel == OBJ_ED_AZUL) ESTADO.ed_azul_angulo  += PASO_ANG;
+    }
+    if (PULSADA(GLFW_KEY_W)) {
+        if (ESTADO.objeto_sel == OBJ_ED_NARANJA) ESTADO.ed_naranja_angulo -= PASO_ANG;
+        else if (ESTADO.objeto_sel == OBJ_ED_AZUL) ESTADO.ed_azul_angulo  -= PASO_ANG;
+    }
+
+    /* --- Shear: D mas, F menos --- */
+    if (PULSADA(GLFW_KEY_D)) {
+        if (ESTADO.objeto_sel == OBJ_ED_NARANJA) {
+            ESTADO.ed_naranja_shear += PASO_SH;
+            if (ESTADO.ed_naranja_shear > 1.5f) ESTADO.ed_naranja_shear = 1.5f;
+        } else if (ESTADO.objeto_sel == OBJ_ED_AZUL) {
+            ESTADO.ed_azul_shear += PASO_SH;
+            if (ESTADO.ed_azul_shear > 1.5f) ESTADO.ed_azul_shear = 1.5f;
+        }
+    }
+    if (PULSADA(GLFW_KEY_F)) {
+        if (ESTADO.objeto_sel == OBJ_ED_NARANJA) {
+            ESTADO.ed_naranja_shear -= PASO_SH;
+            if (ESTADO.ed_naranja_shear < -1.5f) ESTADO.ed_naranja_shear = -1.5f;
+        } else if (ESTADO.objeto_sel == OBJ_ED_AZUL) {
+            ESTADO.ed_azul_shear -= PASO_SH;
+            if (ESTADO.ed_azul_shear < -1.5f) ESTADO.ed_azul_shear = -1.5f;
+        }
+    }
+
+#undef PULSADA
+}
+
+static void actualizar(GLFWwindow *win)
+{
+    /* Teclas mantenidas: siempre activas (incluso en pausa) */
+    procesar_teclas_continuas(win);
+
     if (ESTADO.pausa) return;
 
     /* TRASLACION vehiculo rojo */
@@ -224,12 +228,12 @@ static void actualizar(void)
     if (ESTADO.angulo_rueda < -6.2832f)
         ESTADO.angulo_rueda += 6.2832f;
 
-    /* TRASLACION bus azul (carril contrario) */
+    /* TRASLACION bus azul */
     ESTADO.bus_tx -= 1.5f;
     if (ESTADO.bus_tx < -260.0f)
         ESTADO.bus_tx = 960.0f;
 
-    /* ROTACION ruedas bus (CCW porque avanza hacia la izquierda) */
+    /* ROTACION ruedas bus */
     ESTADO.bus_angulo += 0.07f;
     if (ESTADO.bus_angulo > 6.2832f)
         ESTADO.bus_angulo -= 6.2832f;
@@ -239,7 +243,7 @@ static void actualizar(void)
     if (ESTADO.nube_tx < -130.0f)
         ESTADO.nube_tx = 960.0f;
 
-    /* DISTORSION (SHEAR) senal de transito */
+    /* SHEAR senal de transito */
     ESTADO.shear_senal += 0.003f * shear_dir;
     if (ESTADO.shear_senal >=  0.40f) shear_dir = -1.0f;
     if (ESTADO.shear_senal <= -0.40f) shear_dir =  1.0f;
@@ -248,9 +252,9 @@ static void actualizar(void)
     if (--ESTADO.semaforo_ticks <= 0) {
         ESTADO.semaforo_fase = (ESTADO.semaforo_fase + 1) % 3;
         switch (ESTADO.semaforo_fase) {
-        case 0: ESTADO.semaforo_ticks = 180; break; /* rojo:     3 s */
-        case 1: ESTADO.semaforo_ticks =  90; break; /* amarillo: 1.5 s */
-        case 2: ESTADO.semaforo_ticks = 180; break; /* verde:    3 s */
+        case 0: ESTADO.semaforo_ticks = 180; break;
+        case 1: ESTADO.semaforo_ticks =  90; break;
+        case 2: ESTADO.semaforo_ticks = 180; break;
         }
     }
 }
@@ -269,7 +273,7 @@ int main(int argc, char **argv)
     if (!ventana) { glfwTerminate(); return 1; }
 
     glfwMakeContextCurrent(ventana);
-    glfwSwapInterval(1);   /* VSync: limita a frecuencia del monitor */
+    glfwSwapInterval(1);
 
     glewInit();
 
@@ -280,25 +284,25 @@ int main(int argc, char **argv)
     glPointSize(1.0f);
     setup_proyeccion(ANCHO_VENTANA, ALTO_VENTANA);
 
-    /* Bucle principal con paso de simulacion fijo a 60 fps */
     const double PASO_SIM = 1.0 / 60.0;
     double acumulador = 0.0;
     double t_ant = glfwGetTime();
 
     while (!glfwWindowShouldClose(ventana)) {
+        glfwPollEvents();   /* primero: procesar eventos y callbacks */
+
         double ahora = glfwGetTime();
         acumulador += ahora - t_ant;
         t_ant = ahora;
 
         while (acumulador >= PASO_SIM) {
-            actualizar();
+            actualizar(ventana);   /* incluye lectura de teclas mantenidas */
             acumulador -= PASO_SIM;
         }
 
         glClear(GL_COLOR_BUFFER_BIT);
         dibujar_escena_animada(&ESTADO);
         glfwSwapBuffers(ventana);
-        glfwPollEvents();
     }
 
     glfwDestroyWindow(ventana);
