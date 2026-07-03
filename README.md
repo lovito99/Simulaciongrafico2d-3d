@@ -15,7 +15,7 @@ Docente: Dr. BORIS CHULLO LLAVE
 | Romario Quispe Rimachi | 161425 |
 | Jhamil Jhonatan Huahualuque Vargas | 225418 |
 | Efrain Vitorino Marin | 160337 |
-| Michael Augusto Baez Monge | 225418 |
+
 
 ---
 
